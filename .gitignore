@@ -14,8 +14,16 @@ venv/
 CLAUDE.md
 notes/
 scratch/
+paper/
 
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
+
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.synctex.gz

@@ -3,8 +3,11 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![LightGBM](https://img.shields.io/badge/model-LightGBM-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+[![Preprint](https://img.shields.io/badge/preprint-PDF-b31b1b)](docs/preprint.pdf)
 
-A machine learning pipeline that reads Raman scans of brain tissue and tells which experimental group a sample belongs to. Built by team **Bokom_m** at the Nuclear IT Hack hackathon.
+A machine learning pipeline that reads Raman scans of mouse brain tissue and tells which experimental group a sample belongs to. Built by team **Bokom_m** at the Nuclear IT Hack 2026 hackathon.
+
+**Preprint:** [Raman maps of brain tissue separate HSP70-related stress states: a gradient boosting study with an audit of its own validation](docs/preprint.pdf)
 
 ## About
 
@@ -12,14 +15,14 @@ Raman spectroscopy shows the chemical makeup of tissue without damaging it. Ever
 
 - **Control**: healthy tissue
 - **Endo**: tissue under stress, with the cell's own HSP70 response
-- **Exo**: tissue under stress, with HSP70 added from outside
+- **Exo**: tissue from animals that received HSP70 from outside
 
-HSP70 is a heat shock protein that helps cells survive stress. The question behind the project: does its protective effect leave a trace in the spectrum that a model can pick up?
+HSP70 is a heat shock protein that helps cells survive stress and is known to interact with cell membranes. The question behind the project: does its effect leave a trace in the spectrum that a model can pick up?
 
 Scans come in two spectral windows that we treat separately:
 
-- **1500 cm⁻¹**: proteins and nucleic acids
-- **2900 cm⁻¹**: lipids, mostly cell membranes
+- **1500 cm⁻¹** (fingerprint window): proteins, lipids and nucleic acids
+- **2900 cm⁻¹** (high wavenumber window): C-H vibrations, mostly lipid chains
 
 ## How it works
 
@@ -28,7 +31,7 @@ Scans come in two spectral windows that we treat separately:
 3. **Pixel classification.** A LightGBM model predicts the group for every pixel.
 4. **Sample diagnosis.** Pixel probabilities are averaged into one answer for the whole sample.
 
-The train/test split is done by file, so pixels from the same tissue sample never appear on both sides. Without this the model would just memorize individual slices and the scores would look much better than they really are.
+The math behind each step is written out in the [preprint](docs/preprint.pdf).
 
 ## What the data looks like
 
@@ -49,27 +52,38 @@ The difference from Control shows where the groups actually diverge:
 The differences are subtle, and PCA shows that the groups overlap heavily. That is why we went with gradient boosting instead of a simple linear model.
 
 <details>
-<summary>PCA projection (protein window)</summary>
+<summary>PCA projection (fingerprint window)</summary>
 <img src="images/pca_1500.png" width="60%">
 </details>
 
 ## Results
 
-Accuracy on held-out samples:
+Accuracy on held-out samples, with chance at 33%:
 
 | Window | Accuracy |
 |---|---|
-| Protein (1500) | 83% |
-| Lipid (2900) | 79% |
+| Fingerprint (1500) | 83% |
+| High wavenumber (2900) | 79% |
 
 ![Confusion matrices](images/confusion_matrices.png)
 
-The two windows complement each other. The protein model never missed a healthy sample, and the lipid model never missed an Exo sample. This suggests a two-step check: use the protein window to screen out healthy tissue first, then use the lipid window to tell Endo from Exo.
+The two windows make different mistakes. The 1500 model never missed a healthy sample, and the 2900 model never missed an Exo sample. This hints at a two-step check: screen out healthy tissue with the first window, then tell Endo from Exo with the second.
 
-The model relies most on peaks around 1290 and 1435 cm⁻¹ (protein structure) and around 2880 cm⁻¹ (lipid chains in membranes), which matches what you would expect from changes in proteins and membranes under stress.
+## What the model looks at
 
-> The test set is small (24 samples per window), so treat these numbers as a rough estimate.
-> The bundled `model_1500.pkl` is the tuned version from the notebook. It uses balanced class weights and scored a bit lower on the same split than the base model behind the 83% figure.
+![Band importance](images/band_importance.png)
+
+Both models rely mostly on **lipid bands**: CH₂ vibrations near 1440, 1296, 2850 and 2880 cm⁻¹ and C-C stretches of lipid chains near 1062 and 1130 cm⁻¹. Even in the fingerprint window, which is usually called the protein window, protein-specific bands carry only a small part of the decision. Brain tissue is very rich in lipids, and HSP70 is known to bind membranes, so a signature that lives in lipid bands makes biological sense.
+
+## Honest caveats
+
+After the hackathon we looked at our evaluation more critically. The full discussion is in the preprint, the short version:
+
+- **The split is by map, not by animal.** Several maps come from the same mouse, so the model may partly recognise individual animals. Another team that held out whole animals on the same data got much lower scores, so our numbers are best read as an upper bound.
+- **The test set was used for early stopping** and for choosing between model variants, which also inflates the score.
+- **The test set is small** (24 samples per window), so the uncertainty is large.
+
+The preprint lays out a leakage-free protocol for this data. The bundled `model_1500.pkl` is the regularised variant from the notebook, which scored a bit lower than the base model behind the 83%.
 
 ## Quick start
 
@@ -101,14 +115,27 @@ The raw scans are not included in this repository. To retrain, put the `.txt` fi
 ├── notebooks/
 │   └── model_training.ipynb    preprocessing, training, evaluation
 ├── docs/
-│   ├── report_ru.pdf           full report (Russian)
+│   ├── preprint.pdf            preprint (English)
+│   ├── report_ru.pdf           original hackathon report (Russian)
 │   └── presentation_ru.pptx    hackathon slides (Russian)
 └── images/                     figures for this README
 ```
 
+## Citation
+
+```bibtex
+@misc{bokomm2026raman,
+  author = {Yatsun, Igor and Ilkaeva, Anastasia and Utushkin, Evgeny},
+  title  = {Raman maps of brain tissue separate {HSP70}-related stress states: a gradient boosting study with an audit of its own validation},
+  year   = {2026},
+  note   = {Preprint},
+  url    = {https://github.com/igor688-hub/Nuclear-IT_Hack}
+}
+```
+
 ## Team
 
-**Bokom_m**: Anastasia Ilkaeva, Evgeny Utushkin, Igor Yatsun
+**Bokom_m**: Igor Yatsun, Anastasia Ilkaeva, Evgeny Utushkin
 
 ## License
 

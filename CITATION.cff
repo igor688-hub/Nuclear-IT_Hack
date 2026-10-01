@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Raman maps of brain tissue separate HSP70-related stress states: a gradient boosting study with an audit of its own validation"
+type: software
+authors:
+  - family-names: Yatsun
+    given-names: Igor
+  - family-names: Ilkaeva
+    given-names: Anastasia
+  - family-names: Utushkin
+    given-names: Evgeny
+repository-code: "https://github.com/igor688-hub/Nuclear-IT_Hack"
+license: MIT
+date-released: "2026-10-02"
+keywords:
+  - raman spectroscopy
+  - machine learning
+  - lightgbm
+  - hsp70
+  - brain tissue
