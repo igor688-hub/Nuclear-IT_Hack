@@ -1,0 +1,9 @@
+numpy
+pandas
+scipy
+scikit-learn>=1.4
+lightgbm>=4.0
+joblib
+matplotlib
+seaborn
+tqdm
